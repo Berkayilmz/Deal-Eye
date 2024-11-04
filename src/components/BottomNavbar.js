@@ -22,7 +22,10 @@ const BottomNavbar = () => {
                 <Icon name="camera-outline" size={35} color="#007bff" />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.iconContainer}>
+            <TouchableOpacity 
+                style={styles.iconContainer}
+                onPress={()=> navigation.navigate('SearchPage')}
+            >
                 <Icon name="search-outline" size={28} color="#007bff" />
             </TouchableOpacity>
 
