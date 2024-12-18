@@ -5,11 +5,6 @@ import StoreCard from '../components/StoreCard';
 const HomePage = () => {
   const stores = [
     {
-      id: 1,
-      name: 'BİM',
-      image: require('../../assets/images/store/bim.png'),
-    },
-    {
       id: 2,
       name: 'A101',
       image: require('../../assets/images/store/a101.png'),
@@ -18,11 +13,6 @@ const HomePage = () => {
       id: 3,
       name: 'ŞOK',
       image: require('../../assets/images/store/sok.png'),
-    },
-    {
-      id: 4,
-      name: 'MİGROS',
-      image: require('../../assets/images/store/migros.png'),
     },
   ];
 
