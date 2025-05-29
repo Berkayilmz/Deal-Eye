@@ -2,7 +2,7 @@
 
 ## 🎓 Bitirme Projesi – 2025
 
-**Deal-Eye**, marketfiyati.org.tr üzerinden fiyat verisi toplayarak, geçmişe dayalı analiz ve geleceğe yönelik tahmin yapan, verileri MongoDB’de saklayan ve kullanıcıya modern bir arayüzle sunan **tam entegre bir piyasa izleme ve öngörü platformudur**.
+**Deal-Eye**, marketfiyati üzerinden fiyat verisi toplayarak, geçmişe dayalı analiz ve geleceğe yönelik tahmin yapan, verileri MongoDB’de saklayan ve kullanıcıya modern bir arayüzle sunan **tam entegre bir piyasa izleme ve öngörü platformudur**.
 
 ---
 
