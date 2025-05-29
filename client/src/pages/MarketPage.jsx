@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { fetchProducts } from '../utils/fetchProducts'
+import { fetchProducts } from '../utils/product/fetchProducts'
 import { parseProduct } from '../utils/parseProduct'
 import ProductCard from '../components/ProductCard'
 import LeftBar from '../components/LeftBar'

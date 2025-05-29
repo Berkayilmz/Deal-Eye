@@ -1,16 +1,15 @@
-export const fetchProducts = async () => {
-  try {
-    const response = await fetch('/assets/data/products.json')
-    if (!response.ok) {
-      throw new Error('Veri alınamadı')
-    }
-
-    const data = await response.json()
-
-    // Market adlarını burada direkt düzelt
-    const formatted = data.map(item => {
+// utils/fetchProductById.js
+export const fetchProductById = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/products/${id}`)
+      if (!response.ok) {
+        throw new Error('Ürün verisi alınamadı')
+      }
+  
+      const item = await response.json()
+  
+      // Market adını düzelt
       let formattedMarket = item.market
-
       switch (formattedMarket.toLowerCase()) {
         case 'bim':
           formattedMarket = 'BİM'
@@ -29,19 +28,15 @@ export const fetchProducts = async () => {
           formattedMarket = 'Tarım Kredi Kooperatifi'
           break
         default:
-          // olduğu gibi bırak
           break
       }
-
+  
       return {
         ...item,
         market: formattedMarket
       }
-    })
-
-    return formatted
-  } catch (error) {
-    console.error('fetchProducts Hatası:', error)
-    return []
+    } catch (error) {
+      console.error('fetchProductById Hatası:', error)
+      return null
+    }
   }
-}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Disclosure } from '@headlessui/react'
 import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/20/solid'
-import { fetchProducts } from '../utils/fetchProducts'
+import { fetchProducts } from '../utils/product/fetchProducts'
 
 const CATEGORIES = ['Meyve', 'Sebze', 'Dondurulmuş']
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { fetchProducts } from '../utils/fetchProducts'
+import { fetchProducts } from '../utils/product/fetchProducts'
 import ProductCard from '../components/ProductCard'
 import LeftBar from '../components/LeftBar'
 import HeroSearchSection from '../components/HeroSearchSection'
