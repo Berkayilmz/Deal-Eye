@@ -87,7 +87,7 @@ Veriler, `Node.js` ve `Mongoose` ile MongoDB'ye yazılır ve güncellenir.
 
 ### 🖥️ Kullanıcı Arayüzü – React.js (Vite)
 
-Deal-Eye'in arayüzü modern ve kullanıcı dostu olacak şekilde React (Vite) framework’üyle geliştirilmiştir. Arayüz aşağıdaki özellikleri içerir:
+Deal-Eye'in arayüzü modern ve kullanıcı dostu olacak şekilde React (Vite) framework’üyle geliştirilmektedir. Arayüz aşağıdaki özellikleri içerir:
 
 - ⚡ **Hızlı ve reaktif yapı**: Vite ile optimize edilmiş geliştirme deneyimi
 - 🎨 **Tasarım**: Tailwind CSS ile sade ve modern arayüz, Heroicons simge desteği
