@@ -2,7 +2,6 @@ const Product = require('../models/Product')
 
 const getAllProducts = async (req, res) => {
     try {
-        console.log("ürün verisi çekiliyor");
         const products = await Product.find()
         res.json(products)
     } catch (error) {
@@ -32,5 +31,7 @@ const getProductsByMarket = async (req, res) => {
         res.statur(500).json({ message: 'Internal Server Error' })
     }
 }
+
+
 
 module.exports = { getAllProducts, getProductById, getProductsByMarket }

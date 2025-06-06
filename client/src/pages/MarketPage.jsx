@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { fetchProducts } from '../utils/product/fetchProducts'
-import { parseProduct } from '../utils/parseProduct'
 import ProductCard from '../components/ProductCard'
 import LeftBar from '../components/LeftBar'
 import HeroSearchSection from '../components/HeroSearchSection'
 import { detectCategory } from '../utils/detectCategory'
+import { fetchProductByMarket } from '../utils/product/fetchProductByMarket'
 
 const MarketPage = () => {
   const { marketName } = useParams()
@@ -16,11 +15,8 @@ const MarketPage = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const dataTemp = await fetchProducts()
-        const data = dataTemp.map(parseProduct)
-        const filtered = data.filter(
-          item => item.market.toLowerCase() === marketName.toLowerCase()
-        )
+        const data = await fetchProductByMarket(marketName)
+        const filtered = data.filter(item => item.market.toLowerCase() === marketName.toLowerCase())
         setProducts(filtered)
       } catch (err) {
         console.error('Ürünler yüklenemedi:', err)
@@ -47,19 +43,17 @@ const MarketPage = () => {
   })
 
   return (
-    <div>
-      {/* Üst arama bölümü */}
+    <div className="p-6 max-w-6xl mx-auto bg-white shadow-lg rounded-xl">
       <HeroSearchSection
         value={query}
         onChange={handleSearchChange}
         onSubmit={handleSearchSubmit}
       />
 
-      {/* Sol filtre paneli + ürün listesi */}
       <div className="flex">
         <LeftBar
           showMarketFilter={false}
-          selectedMarkets={[]} // devre dışı
+          selectedMarkets={[]}
           setSelectedMarkets={() => { }}
           selectedCategories={selectedCategories}
           setSelectedCategories={setSelectedCategories}
@@ -74,10 +68,9 @@ const MarketPage = () => {
             <p className="text-gray-500">Ürün bulunamadı.</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {filteredProducts.map(product => {
-                console.log(product)
-                return <ProductCard key={product.id} product={product} />
-              })}
+              {filteredProducts.map(product => (
+                <ProductCard key={product.id} product={product} />
+              ))}
             </div>
           )}
         </div>

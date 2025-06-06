@@ -80,6 +80,7 @@ const ProductDetailPage = () => {
     },
   }
 
+
   return (
     <div className="p-6 max-w-6xl mx-auto bg-white shadow-lg rounded-xl">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

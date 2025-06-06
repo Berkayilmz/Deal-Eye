@@ -26,7 +26,6 @@ const getAllProducts = async () => {
     const products = await Product.find({urunId})
     console.log(`🔍 Toplam ${products.length} ürün bulundu.`)
     console.dir(products, { depth: null, colors: true })
-    console.log(products.length);
     process.exit(0)
   } catch (err) {
     console.error('❌ Ürünler alınamadı:', err.message)

@@ -20,12 +20,6 @@ mongoose
   .then(() => console.log('✅ MongoDB bağlantısı başarılı'))
   .catch(err => console.error('❌ MongoDB bağlantı hatası:', err.message))
 
-
-app.get('/test', (req, res) => {
-  console.log('🧪 Test route çalıştı')
-  res.json({ message: 'Test başarılı' })
-})
-
 // Örnek rota
 app.get('/', (req, res) => {
   res.send('API çalışıyor')
