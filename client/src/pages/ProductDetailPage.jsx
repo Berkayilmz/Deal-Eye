@@ -79,7 +79,7 @@ const ProductDetailPage = () => {
       },
     },
   }
-
+console.log(product);
 
   return (
     <div className="p-6 max-w-6xl mx-auto bg-white shadow-lg rounded-xl">

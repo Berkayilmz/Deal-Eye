@@ -3,8 +3,11 @@ const express = require('express')
 const mongoose = require('mongoose')
 const cors = require('cors')
 const dotenv = require('dotenv')
+const productRoutes = require('./routes/productRoutes')
+const predictRoute = require('./routes/predictRoute');
 
 dotenv.config()
+
 
 const app = express()
 app.use(cors({
@@ -26,8 +29,8 @@ app.get('/', (req, res) => {
 })
 
 // Ürün rotaları
-const productRoutes = require('./routes/productRoutes')
-app.use('/api/products', productRoutes)
+app.use('/api/products', productRoutes);
+app.use('/api/predict', predictRoute);
 
 const PORT = process.env.PORT || 8000
 app.listen(PORT, () => {
