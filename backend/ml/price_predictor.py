@@ -35,10 +35,10 @@ def get_trend(series):
     return model.coef_[0]
 
 def get_dynamic_threshold(price):
-    if price < 20:
+    if price < 30:
         return 10
     elif price < 50:
-        return 7
+        return 8
     elif price < 100:
         return 5
     else:
@@ -46,16 +46,16 @@ def get_dynamic_threshold(price):
 
 def lstm_predict(prices_list):
     data = np.array(prices_list).reshape(-1, 1)
-    if len(data) < 14:
+    if len(data) < 28:
         return None
 
     scaler = MinMaxScaler()
     data_scaled = scaler.fit_transform(data)
 
     X, y = [], []
-    for i in range(len(data_scaled) - 7):
-        X.append(data_scaled[i:i + 7])
-        y.append(data_scaled[i + 7])
+    for i in range(len(data_scaled) - 28):
+        X.append(data_scaled[i:i + 28])
+        y.append(data_scaled[i + 28])
     X, y = np.array(X), np.array(y)
 
     model = Sequential()
