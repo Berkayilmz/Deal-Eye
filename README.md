@@ -1,4 +1,4 @@
-# 🛒 Deal-Eye: Market Fiyat Takip ve Tahmin Sistemi
+# 🍎 Deal-Eye: Market Fiyat Takip ve Tahmin Sistemi
 
 ## 🎓 Bitirme Projesi – 2025
 
@@ -8,7 +8,7 @@
 
 ## 📦 Proje Bileşenleri
 
-### 1. 🕸 Veri Toplama – Selenium ile Web Scraping
+### 1. 🔸 Veri Toplama – Selenium ile Web Scraping
 
 - Kullanıcı lokasyonuna en yakın market seçilir.
 - Sebze-meyve kategorisindeki ürünler filtrelenir.
@@ -19,49 +19,71 @@
 
 ---
 
-### 2. 📊 Fiyat Tahmin Modülleri
+### 2. 📊 Fiyat Tahmin Sistemi Entegrasyonu
 
-#### 🔮 Günlük Tahmin (Model A)
-
-- **Amaç**: Bir sonraki günün fiyatını tahmin etmek  
-- **Girdi**: Son 14 günlük fiyat verisi  
-- **Modeller**: XGBoost, Linear Regression, Polynomial Regression  
-- **Yöntem**: MAE (mean absolute error) ile model başarımı hesaplanır, ağırlıklı ortalama ile tahmin yapılır
-
-**Örnek Grafik**  
-![Günlük Tahmin Grafiği](./assets/predict-1-day.jpeg)
+Kullanıcı bir ürünün detay sayfasına girdiğinde, o ürünün geçmiş fiyat verileri kullanılarak **gelecek fiyat trendi** (zam/indirim/aynı kalır) tahmin edilir ve kullanıcıya grafiksel olarak sunulur.
 
 ---
 
-#### 📈 Zaman Serisi ile Günlük Tahmin (Model B)
+### ⟳ Çalışma Akışı
 
-- **Amaç**: Geçmiş 5 günü baz alarak bugün fiyat tahmini yapmak  
-- **Yöntem**: Sliding Window + TimeSeriesSplit  
-- **Model**: XGBoost  
-- **Metrikler**: MAE, MAPE  
+1. **Frontend (React.js)**:  
+   - Kullanıcı `/product/:id` sayfasını ziyaret eder.
+   - Sayfa `useEffect` içinde `fetchProductById` fonksiyonu ile MongoDB'den ürün ve fiyat verilerini çeker.
+   - `prices` objesi, JSON formatında `POST` isteğiyle backend API'sine (`/api/predict/price`) gönderilir.
 
-**Örnek Grafik**  
-![Günlük Tahmin Grafiği](./assets/predict-1-day-2.jpeg)
+2. **Backend (Express + Python)**:  
+   - Express route, gelen isteği Python betiği `price_predictor.py`’a yönlendirir.
+   - Python betiği:
+     - Zam/İndirim Trend Analizi: Haftalık segmentlere ayrılmış veriler üzerinden geçmiş zam ve indirim oranları, fiyat varyansı ve haftalık ortalamalar hesaplanır
+     - Eğilim ve Momentum: Ortalama fiyatlar üzerinden regresyonla genel trend çıkartılır; son iki haftadaki fiyat değişim ivmesi belirlenir
+     - LSTM ile Tahmin: Son 14 günlük fiyat dizisi, LSTM modeline verilir ve gelecek haftaya ait fiyat tahmini yapılır
 
----
-
-#### 📅 Haftalık Zam/İndirim Tahmini (Model C)
-
-- **Amaç**: Önümüzdeki hafta zam veya indirim ihtimalini öngörmek  
-- **Girdi Özellikleri**:
-  - Haftalık ortalama fiyat
-  - Zam/indirim sayısı ve yüzdesi
-- **Modeller**:
-  - Tahmini Fiyat: VotingRegressor (XGBoost + Random Forest + Ridge)
-  - Zam Olasılığı: XGBClassifier
-- **Çıktılar**: Zam ihtimali, tahmini zam oranı, sinyal ve başarı skoru
-
-**Örnek Zam Tahmin Grafiği**  
-![Haftalık Zam Tahmini](./assets/predict-weekly.jpeg)
+3. **Frontend Gösterimi**:
+   - `Tahmin kutusu` bileşeni tahmin sonucunu alır ve arayüzde görüntüler.
 
 ---
 
-## 🗃️ Veritabanı – MongoDB
+### 📀 API İsteği Örneği
+
+```json
+POST /api/predict/price
+Content-Type: application/json
+
+{
+  "prices": {
+    "01-06-2025": 22.0,
+    "02-06-2025": 22.5,
+    "03-06-2025": 23.0
+  }
+}
+```
+
+---
+
+### 🔢 Kullanılan Yöntemler
+
+| Bileşen                | Teknoloji / Yöntem                        |
+|------------------------|-------------------------------------------|
+| Model Tipi             | LSTM (Long Short-Term Memory)             |
+| Framework              | TensorFlow + Keras                        |
+| Veri Ölçekleme         | MinMaxScaler                              |
+| Trend Hesaplama        | Linear Regression (scikit-learn)          |
+| Dinamik Eşik          | Fiyat bazlı yüzdelik eşik mantığı            |
+| Tahmin Değerlendirme   | Yüzde Değişim, MAPE, Directional Accuracy  |
+| API Arayüzü            | Express.js -> Python (child_process)      |
+| Frontend Bağlantı     | Fetch                                     |
+
+---
+
+### 🔎 Ek Notlar
+
+- Gelecekte tahmin doğruluklarının düzenli raporlanması için otomatik MAPE takibi entegre edilebilir.
+- Daha gerçekçi tahmin için mevsimsellik ve ürün türü analizleri planlanabilir.
+
+---
+
+## 📃 Veritabanı – MongoDB
 
 Tüm ürünler ve fiyat geçmişi aşağıdaki yapıyla MongoDB'de saklanır:
 
@@ -85,9 +107,9 @@ Veriler, `Node.js` ve `Mongoose` ile MongoDB'ye yazılır ve güncellenir.
 
 ## 💻 Arayüz ve Teknolojiler
 
-### 🖥️ Kullanıcı Arayüzü – React.js (Vite)
+### 🔝 Kullanıcı Arayüzü – React.js (Vite)
 
-Deal-Eye'in arayüzü modern ve kullanıcı dostu olacak şekilde React (Vite) framework’üyle geliştirilmektedir. Arayüz aşağıdaki özellikleri içerir:
+Deal-Eye'in arayüzü modern ve kullanıcı dostu olacak şekilde React (Vite) framework'üyle geliştirilmektedir. Arayüz aşağıdaki özellikleri içerir:
 
 - ⚡ **Hızlı ve reaktif yapı**: Vite ile optimize edilmiş geliştirme deneyimi
 - 🎨 **Tasarım**: Tailwind CSS ile sade ve modern arayüz, Heroicons simge desteği
@@ -112,9 +134,9 @@ Deal-Eye'in arayüzü modern ve kullanıcı dostu olacak şekilde React (Vite) f
 | Backend API              | Node.js + Express             |
 | Veritabanı               | MongoDB + Mongoose            |
 | Web Scraping             | Python + Selenium             |
-| Tahmin Modelleri         | XGBoost, Random Forest, Ridge |
-| Zaman Serisi Analizi     | TimeSeriesSplit (sklearn)     |
-| Model Değerlendirme      | MAE, MAPE, Cross Validation   |
+| Tahmin Modelleri         | XGBoost, Random Forest, Ridge, LSTM |
+| Zaman Serisi Analizi     | TimeSeriesSplit (sklearn), LSTM |
+| Model Değerlendirme      | MAE, MAPE, Directional Accuracy |
 | Veri Dönüşümü & Temizleme| Pandas, NumPy                 |
 | Dosya Formatları         | JSON, Excel (openpyxl)        |
 
@@ -170,3 +192,6 @@ npm run dev
 **Berkay Yılmaz**  
 Bitirme Projesi – Süleyman Demirel Üniversitesi  
 Yıl: 2025
+
+---
+
