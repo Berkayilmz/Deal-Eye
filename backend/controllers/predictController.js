@@ -3,6 +3,7 @@ const path = require('path');
 
 exports.predictPriceTrend = async (req, res) => {
   try {
+    console.log("📦 Gelen prices:", req.body.prices);
     const prices = req.body.prices;
     if (!prices || typeof prices !== 'object') {
       return res.status(400).json({ error: 'Geçersiz price verisi' });

@@ -13,6 +13,7 @@ import React, { useEffect, useState } from 'react'
 import { Line } from 'react-chartjs-2'
 import { useParams } from 'react-router-dom'
 import { fetchProductById } from '../utils/product/fetchProductById'
+import { getPrediction } from '../utils/getPrediction'
 
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend)
 
@@ -20,15 +21,33 @@ const ProductDetailPage = () => {
   const { id } = useParams()
   const [product, setProduct] = useState(null)
   const [timeRange, setTimeRange] = useState('all')
+  const [prediction, setPrediction] = useState(null)
+  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   useEffect(() => {
     const loadProduct = async () => {
       const data = await fetchProductById(id)
       setProduct(data)
-    }
+  
+      await sleep(500);
 
-    loadProduct()
-  }, [id])
+      const prices = data.prices;
+  
+      // 💥 TL etiketini kaldır
+      const cleanedPrices = {};
+      for (const [key, value] of Object.entries(prices)) {
+        cleanedPrices[key] = typeof value === 'string' ? parseFloat(value.replace("₺", "")) : value;
+      }
+  
+      console.log("🎯 Gönderilecek JSON:", JSON.stringify({ prices: cleanedPrices }));
+  
+      // API’ye gönder
+      const prediction = await getPrediction(cleanedPrices);
+      setPrediction(prediction);
+    }
+  
+    loadProduct();
+  }, [id]);
 
   if (!product) {
     return <div className="p-6">Ürün bulunamadı veya yükleniyor...</div>
@@ -79,7 +98,6 @@ const ProductDetailPage = () => {
       },
     },
   }
-console.log(product);
 
   return (
     <div className="p-6 max-w-6xl mx-auto bg-white shadow-lg rounded-xl">
@@ -149,8 +167,18 @@ console.log(product);
           <Line data={chartData} options={chartOptions} />
         </div>
 
-        <div className="bg-gray-50 p-6 rounded-lg border col-span-1 flex items-center justify-center text-gray-400 italic">
-          Tahmin kutusu (yakında)
+        <div className="bg-gray-50 p-6 rounded-lg border col-span-1 flex flex-col items-start justify-center text-sm text-gray-700">
+          <h3 className="font-semibold text-gray-800 mb-2">Tahmin Sonucu</h3>
+          {prediction ? (
+            <>
+              <p><strong>Mevcut Fiyat:</strong> {prediction.mevcutFiyat}₺</p>
+              <p><strong>Tahmin (LSTM):</strong> {prediction.tahminFiyat_LSTM ? `${prediction.tahminFiyat_LSTM}₺` : 'Yetersiz veri'}</p>
+              <p><strong>Değişim:</strong> %{prediction.yuzdeDegisim} ({prediction.yon})</p>
+              <p><strong>Model Başarı:</strong> {prediction.modelBasari} (MAPE: %{prediction.geriyeDonukMAPE})</p>
+            </>
+          ) : (
+            <p className="italic text-gray-400">Tahmin yükleniyor...</p>
+          )}
         </div>
       </div>
     </div>

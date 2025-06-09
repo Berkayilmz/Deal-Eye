@@ -3,15 +3,13 @@ import json
 import pandas as pd
 import numpy as np
 import warnings
-from xgboost import XGBRegressor
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_absolute_percentage_error
+from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Input
+from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
 from tensorflow.keras.optimizers import Adam
 
 warnings.filterwarnings("ignore")
-
 
 def fill_zeros_with_next(prices):
     prices_list = list(prices.items())
@@ -28,7 +26,6 @@ def fill_zeros_with_next(prices):
     filled.reverse()
     return dict(filled)
 
-
 def get_trend(series):
     if len(series) < 2:
         return 0.0
@@ -37,40 +34,65 @@ def get_trend(series):
     model = LinearRegression().fit(X, y)
     return model.coef_[0]
 
+def get_dynamic_threshold(price):
+    if price < 20:
+        return 10
+    elif price < 50:
+        return 7
+    elif price < 100:
+        return 5
+    else:
+        return 3
 
 def lstm_predict(prices_list):
     data = np.array(prices_list).reshape(-1, 1)
-    if len(data) < 10:
-        return None  # LSTM için yeterli veri yok
+    if len(data) < 14:
+        return None
 
-    X = []
-    y = []
-    for i in range(len(data) - 7):
-        X.append(data[i:i+7])
-        y.append(data[i+7])
+    scaler = MinMaxScaler()
+    data_scaled = scaler.fit_transform(data)
+
+    X, y = [], []
+    for i in range(len(data_scaled) - 7):
+        X.append(data_scaled[i:i + 7])
+        y.append(data_scaled[i + 7])
     X, y = np.array(X), np.array(y)
 
-    model = Sequential([
-        Input(shape=(7, 1)),
-        LSTM(32, activation='relu'),
-        Dense(1)
-    ])
+    model = Sequential()
+    model.add(Input(shape=(7, 1)))
+    model.add(LSTM(64, activation='relu', return_sequences=True))
+    model.add(Dropout(0.2))
+    model.add(LSTM(32, activation='relu'))
+    model.add(Dense(1))
+
     model.compile(optimizer=Adam(learning_rate=0.01), loss='mse')
     model.fit(X, y, epochs=50, verbose=0)
 
-    last_seq = data[-7:].reshape(1, 7, 1)
-    pred = model.predict(last_seq, verbose=0)[0][0]
+    last_seq = data_scaled[-7:].reshape(1, 7, 1)
+    pred_scaled = model.predict(last_seq, verbose=0)[0][0]
+    pred = scaler.inverse_transform([[pred_scaled]])[0][0]
     return float(pred)
-
 
 def analyze_weekly(prices_dict):
     prices_dict = fill_zeros_with_next(prices_dict)
     sorted_items = sorted(prices_dict.items(), key=lambda x: pd.to_datetime(x[0], dayfirst=True))
     dates = [pd.to_datetime(date, dayfirst=True) for date, _ in sorted_items]
     values = [float(price) for _, price in sorted_items]
-    df = pd.DataFrame({'date': dates, 'price': values})
-    df['week'] = df['date'].dt.to_period('W').apply(lambda r: r.start_time)
 
+    df = pd.DataFrame({'date': dates, 'price': values})
+    df['daily_diff'] = df['price'].diff().fillna(0)
+    df['dayofweek'] = df['date'].dt.dayofweek
+    df['month'] = df['date'].dt.month
+    df['day_since_start'] = (df['date'] - df['date'].min()).dt.days
+    df['price_rolling_mean'] = df['price'].rolling(window=7).mean().bfill()
+    df['season'] = df['month'].apply(lambda x: (
+        'ilkbahar' if x in [3, 4, 5] else
+        'yaz' if x in [6, 7, 8] else
+        'sonbahar' if x in [9, 10, 11] else
+        'kış'
+    ))
+
+    df['week'] = df['date'].dt.to_period('W').apply(lambda r: r.start_time)
     weekly_stats = df.groupby('week').agg(
         OrtalamaFiyat=('price', 'mean'),
         ZamSayisi=('price', lambda x: (np.diff(x) > 0).sum()),
@@ -81,7 +103,9 @@ def analyze_weekly(prices_dict):
         OrtalamaIndirimYuzde=('price', lambda x: np.mean([(x.iloc[i] - x.iloc[i+1]) / x.iloc[i] * 100
                                                            for i in range(len(x)-1) if x.iloc[i+1] < x.iloc[i]])
                               if any(x.iloc[i+1] < x.iloc[i] for i in range(len(x)-1)) else 0.0),
-        FiyatVaryans=('price', 'std')
+        FiyatVaryans=('price', 'std'),
+        OrtalamaDailyDiff=('daily_diff', 'mean'),
+        OrtalamaRolling=('price_rolling_mean', 'mean')
     ).reset_index()
 
     if len(weekly_stats) < 3:
@@ -92,54 +116,28 @@ def analyze_weekly(prices_dict):
     weekly_stats['Volatilite'] = weekly_stats['OrtalamaZamYuzde'] + weekly_stats['OrtalamaIndirimYuzde']
     weekly_stats['Trend'] = get_trend(weekly_stats['OrtalamaFiyat'])
 
-    features = [
-        'OrtalamaFiyat', 'ZamSayisi', 'IndirimSayisi',
-        'OrtalamaZamYuzde', 'OrtalamaIndirimYuzde',
-        'FiyatDegisimi', 'Momentum', 'Volatilite',
-        'FiyatVaryans', 'Trend'
-    ]
+    current = weekly_stats.iloc[-1]['OrtalamaFiyat']
+    lstm_pred = lstm_predict(values)
+    if lstm_pred is None:
+        return {"error": "LSTM için yeterli veri yok"}
 
-    train_data = weekly_stats.iloc[:-1]
-    test_data = weekly_stats.iloc[-1]
-
-    X_train = train_data[features].iloc[:-1]
-    y_train = train_data['OrtalamaFiyat'].shift(-1).dropna().values
-
-    if len(X_train) != len(y_train):
-        return {"error": "Veri uyumsuzluğu"}
-
-    model = XGBRegressor(n_estimators=100)
-    model.fit(X_train, y_train)
-
-    X_test = test_data[features].values.reshape(1, -1)
-    prediction_xgb = model.predict(X_test)[0]
-    current = test_data['OrtalamaFiyat']
-    delta = prediction_xgb - current
+    delta = lstm_pred - current
     percent = (delta / current) * 100
 
-    y_true = train_data['OrtalamaFiyat'].iloc[1:].values
-    y_pred = model.predict(X_train)
-    mape = mean_absolute_percentage_error(y_true, y_pred) * 100
-    yorum = (
-        "Mükemmel" if mape < 5 else
-        "İyi" if mape < 10 else
-        "Kabul Edilebilir" if mape < 20 else
-        "Zayıf"
-    )
-
-    # LSTM tahmini
-    lstm_pred = lstm_predict(values)
+    threshold = get_dynamic_threshold(current)
+    if percent > threshold:
+        yon = "Zam"
+    elif percent < -threshold:
+        yon = "İndirim"
+    else:
+        yon = "Aynı"
 
     return {
         "mevcutFiyat": float(round(current, 2)),
-        "tahminFiyat_XGB": float(round(prediction_xgb, 2)),
-        "tahminFiyat_LSTM": float(round(lstm_pred, 2)) if lstm_pred else None,
+        "tahminFiyat_LSTM": float(round(lstm_pred, 2)),
         "yuzdeDegisim": float(round(percent, 2)),
-        "yon": "Zam" if percent > 0.5 else "İndirim" if percent < -0.5 else "Aynı",
-        "geriyeDonukMAPE": round(mape, 2),
-        "modelBasari": yorum
+        "yon": yon
     }
-
 
 if __name__ == "__main__":
     raw_input = sys.stdin.read()
